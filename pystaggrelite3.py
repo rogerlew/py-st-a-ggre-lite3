@@ -78,6 +78,7 @@ and mode are implemented with running tallies.
 
 import sys
 from collections import Counter
+from collections import deque
 from math import sqrt,isnan,isinf,log10
 from copy import copy
 
@@ -166,7 +167,6 @@ class datarange:
         
         self.min=maxfloat
         self.max=minfloat
-        self.N=0.
 
     def step(self, value):
         if isfloat(value):
@@ -176,10 +176,9 @@ class datarange:
                     self.min=v
                 if v>self.max:
                     self.max=v
-                self.N+=1.
         
     def finalize(self):
-        if self.N==0.:
+        if self.min==maxfloat and self.max==minfloat:
             return None
         
         return self.max-self.min
@@ -191,20 +190,20 @@ class abs_mean:
     """
     def __init__(self):
         self.s=0.
-        self.N=0.
+        self.N=0
 
     def step(self, value):
         if isfloat(value):
             v=float(value)
             if not isnan(v):
                 self.s+=abs(v)
-                self.N+=1.
+                self.N+=1
         
     def finalize(self):
-        if self.N==0.:
+        if self.N==0:
             return None
         
-        return self.s/self.N
+        return self.s/float(self.N)
 
 class geometric_mean:
     """
@@ -213,7 +212,7 @@ class geometric_mean:
     """
     def __init__(self):
         self.s=0.
-        self.N=0.
+        self.N=0
         self.ret_value=0.
 
     def step(self, value):
@@ -226,23 +225,23 @@ class geometric_mean:
                     self.ret_value=None
                 else:
                     self.s+=log10(v)
-                    self.N+=1.
+                    self.N+=1
         
     def finalize(self):
-        if self.N==0.:
+        if self.N==0:
             return None
         
         if self.ret_value!=0.:
             return self.ret_value
         
-        return 10.**(self.s/self.N)
+        return 10.**(self.s/float(self.N))
 
 class median:
     """
     Returns the median of the elements.
     """
     def __init__(self):
-        self.sequence=[]
+        self.sequence=deque()
 
     def step(self, value):
         if isfloat(value):
@@ -251,10 +250,9 @@ class median:
                 self.sequence.append(v)
                         
     def finalize(self):
-        if self.sequence==[]:
-            return None
-
         N=len(self.sequence)
+        if N==0:
+            return None
 
         if N%2==0:
             return sum(sorted(self.sequence)[N/2-1:N/2+1])/2.
@@ -267,17 +265,15 @@ class mode:
     """
     def __init__(self):
         self.counter=Counter()
-        self.N=0.
 
     def step(self, value):
         if isfloat(value):
             v=float(value)
             if not isnan(v):
                 self.counter[v]+=1
-                self.N+=1
                         
     def finalize(self):
-        if self.N==0.:
+        if self.counter=={}:
             return None
 
         return self.counter.most_common()[0][0]
@@ -297,7 +293,7 @@ class var:
     def __init__(self):
         self.s=0.
         self.ss=0.
-        self.N=0.
+        self.N=0
 
     def step(self, value):
         if isfloat(value):
@@ -305,12 +301,13 @@ class var:
             if not isnan(v):
                 self.s+=v
                 self.ss+=v**2.
-                self.N+=1.
+                self.N+=1
         
     def finalize(self):
-        if self.N==0.:
+        if self.N==0:
             return None
         
+        self.N=float(self.N)
         return (self.N/(self.N-1.))*(self.ss/(self.N)-(self.s/self.N)**2.)
     
 class varp:
@@ -328,7 +325,7 @@ class varp:
     def __init__(self):
         self.s=0.
         self.ss=0.
-        self.N=0.
+        self.N=0
 
     def step(self, value):
         if isfloat(value):
@@ -336,12 +333,13 @@ class varp:
             if not isnan(v):
                 self.s+=v
                 self.ss+=v**2.
-                self.N+=1.
+                self.N+=1
 
     def finalize(self):
-        if self.N==0.:
+        if self.N==0:
             return None
-        
+
+        self.N=float(self.N)
         return self.ss/self.N-(self.s/self.N)**2.
 
 class stdev:
@@ -359,7 +357,7 @@ class stdev:
     def __init__(self):
         self.s=0.
         self.ss=0.
-        self.N=0.
+        self.N=0
 
     def step(self, value):
         if isfloat(value):
@@ -367,11 +365,13 @@ class stdev:
             if not isnan(v):
                 self.s+=v
                 self.ss+=v**2.
-                self.N+=1.
+                self.N+=1
         
     def finalize(self):
-        if self.N==0.:
+        if self.N==0:
             return None
+
+        self.N=float(self.N)
         return sqrt(self.N/(self.N-1.))*\
                sqrt(self.ss/self.N-(self.s/self.N)**2.)
     
@@ -391,7 +391,7 @@ class stdevp:
     def __init__(self):
         self.s=0.
         self.ss=0.
-        self.N=0.
+        self.N=0
 
     def step(self, value):
         if isfloat(value):
@@ -399,12 +399,13 @@ class stdevp:
             if not isnan(v):
                 self.s+=v
                 self.ss+=v**2.
-                self.N+=1.
+                self.N+=1
         
     def finalize(self):
-        if self.N==0.:
+        if self.N==0:
             return None
-        
+
+        self.N=float(self.N)
         return sqrt(self.ss/self.N-(self.s/self.N)**2.)
 
 class sem:
@@ -421,7 +422,7 @@ class sem:
     def __init__(self):
         self.s=0.
         self.ss=0.
-        self.N=0.
+        self.N=0
 
     def step(self, value):
         if isfloat(value):
@@ -429,12 +430,13 @@ class sem:
             if not isnan(v):
                 self.s+=v
                 self.ss+=v**2.
-                self.N+=1.
+                self.N+=1
         
     def finalize(self):
-        if self.N==0.:
+        if self.N==0:
             return None
-        
+
+        self.N=float(self.N)
         return sqrt(self.N/(self.N-1.))*\
                sqrt(self.ss/self.N-(self.s/self.N)**2.)/\
                sqrt(self.N)
@@ -452,7 +454,7 @@ class ci:
     def __init__(self):
         self.s=0.
         self.ss=0.
-        self.N=0.
+        self.N=0
 
     def step(self, value):
         if isfloat(value):
@@ -460,12 +462,13 @@ class ci:
             if not isnan(v):
                 self.s+=v
                 self.ss+=v**2.
-                self.N+=1.
+                self.N+=1
         
     def finalize(self):
-        if self.N==0.:
+        if self.N==0:
             return None
-        
+
+        self.N=float(self.N)
         return 1.96*sqrt(self.N/(self.N-1.))*\
                sqrt(self.ss/self.N-(self.s/self.N)**2.)/\
                sqrt(self.N)
@@ -480,20 +483,20 @@ class rms:
     """
     def __init__(self):
         self.ss=0.
-        self.N=0.
+        self.N=0
         
     def step(self, value):
         if isfloat(value):
             v=float(value)
             if not isnan(v):
                 self.ss+=v**2.
-                self.N+=1.
+                self.N+=1
         
     def finalize(self):
-        if self.N==0.:
+        if self.N==0:
             return None
         
-        return sqrt(self.ss/self.N )
+        return sqrt(self.ss/float(self.N))
         
 class prod:
     """
@@ -501,17 +504,17 @@ class prod:
     """
     def __init__(self):
         self.p=1.
-        self.N=0.
+        self.N=0
 
     def step(self, value):
         if isfloat(value):
             v=float(value)
             if not isnan(v):
                 self.p*=v
-                self.N+=1.
+                self.N+=1
         
     def finalize(self):
-        if self.N==0.:
+        if self.N==0:
             return None
         
         return self.p
@@ -534,7 +537,7 @@ class skew:
         self.s1=0.
         self.s2=0.
         self.s3=0.
-        self.N=0.
+        self.N=0
 
     def step(self, value):
         if isfloat(value):
@@ -546,12 +549,14 @@ class skew:
                 self.s2+=v
                 v*=ov
                 self.s3+=v
-                self.N+=1.
+                self.N+=1
         
     def finalize(self):
-        if self.N<3.:
+        if self.N<3:
             return None
         
+        self.N=float(self.N)
+
         # calculate unbiased raw moments
         m1=self.s1/self.N
         m2=self.s2/self.N
@@ -583,7 +588,7 @@ class kurt:
         self.s2=0.
         self.s3=0.
         self.s4=0.
-        self.N=0.
+        self.N=0
 
     def step(self, value):
         if isfloat(value):
@@ -597,11 +602,13 @@ class kurt:
                 self.s3+=v
                 v*=ov
                 self.s4+=v
-                self.N+=1.
+                self.N+=1
         
     def finalize(self):
-        if self.N<3.:
+        if self.N<3:
             return None
+
+        self.N=float(self.N)
         
         # calculate unbiased raw moments
         m1=self.s1/self.N
