@@ -78,7 +78,6 @@ and mode are implemented with running tallies.
 
 import sys
 from collections import Counter
-from collections import deque
 from math import sqrt,isnan,isinf,log10
 from copy import copy
 
@@ -96,11 +95,6 @@ def isfloat(x):
     >>> isfloat(float('nan'))
     True
     >>> isfloat(float('inf'))
-    True
-    >>> import numpy
-    >>> isfloat(numpy.float64('nan'))
-    True
-    >>> isfloat(numpy.float64('inf'))
     True
     """
     try: float(x)
@@ -241,7 +235,7 @@ class median:
     Returns the median of the elements.
     """
     def __init__(self):
-        self.sequence=deque()
+        self.sequence=[]
 
     def step(self, value):
         if isfloat(value):
@@ -255,7 +249,7 @@ class median:
             return None
 
         if N%2==0:
-            return sum(sorted(self.sequence)[N/2-1:N/2+1])/2.
+            return sum(sorted(self.sequence)[int(N/2-1):int(N/2)+1])/2.
         else:
             return sorted(self.sequence)[int(N/2)]
     
@@ -275,7 +269,7 @@ class mode:
     def finalize(self):
         if self.counter=={}:
             return None
-
+        
         return self.counter.most_common()[0][0]
     
 class var:
@@ -625,5 +619,23 @@ class kurt:
         return k4/k2**2.
         
 if __name__ == "__main__":
-    import doctest
-    doctest.testmod()
+##    import doctest
+##    doctest.testmod()
+    import sqlite3 as sqlite
+   # create an sqlite table
+    con = sqlite.connect(":memory:")
+    cur = con.cursor()
+    cur.execute("""
+        create table test(
+            t text,
+            i integer,
+            f float,
+            neg float,
+            empty float,
+            hasnan float,
+            hasinf float,
+            modefive float,
+            n,
+            b blob
+            )
+        """)

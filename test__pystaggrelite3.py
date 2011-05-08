@@ -37,7 +37,6 @@ defined in the stat_aggregate_funcs module.
 
 import unittest
 import sqlite3 as sqlite
-import new
 
 import pystaggrelite3
 from pystaggrelite3 import isfloat
@@ -72,28 +71,28 @@ class aggTests(unittest.TestCase):
         # data = [ 1.1, 2.2, 3.3, 4.4, 5.5, 6.6, 7.7, 8.8, 9.9, 
         #          10.10, 11.11, 12.12, 13.13, 14.14 ]
         cur.executemany("insert into test(t) values (?)",
-                        [('%i.%i'%(i,i),) for i in xrange(1,15)])
+                        [('%i.%i'%(i,i),) for i in range(1,15)])
         
         cur.executemany("insert into test(f) values (?)",
-                        [('%i.%i'%(i,i),) for i in xrange(1,15)])
+                        [('%i.%i'%(i,i),) for i in range(1,15)])
         
         cur.executemany("insert into test(neg) values (?)",
-                        [('-%i.%i'%(i,i),) for i in xrange(1,15)])
+                        [('-%i.%i'%(i,i),) for i in range(1,15)])
         
         cur.executemany("insert into test(hasnan) values (?)",
-                        [('%i.%i'%(i,i),) for i in xrange(1,7)]+\
+                        [('%i.%i'%(i,i),) for i in range(1,7)]+\
                         [('NaN',)]+\
-                        [('%i.%i'%(i,i),) for i in xrange(8,15)])
+                        [('%i.%i'%(i,i),) for i in range(8,15)])
         
         cur.executemany("insert into test(hasinf) values (?)",
-                        [('%i.%i'%(i,i),) for i in xrange(1,7)]+\
+                        [('%i.%i'%(i,i),) for i in range(1,7)]+\
                         [('Inf',)]+\
-                        [('%i.%i'%(i,i),) for i in xrange(8,15)])
+                        [('%i.%i'%(i,i),) for i in range(8,15)])
         
         cur.executemany("insert into test(modefive) values (?)",
-                        [('%i'%i,) for i in xrange(1,6)]+\
+                        [('%i'%i,) for i in range(1,6)]+\
                         [('5',)]+\
-                        [('%i'%i,) for i in xrange(5,15)])
+                        [('%i'%i,) for i in range(5,15)])
 
         # register user defined aggregate with sqlite
         self.con.create_aggregate(self.name, 1, self.aggregate)
@@ -105,69 +104,81 @@ class aggTests(unittest.TestCase):
 
     def Check_float(self):
         """check how aggregate handles float data"""
-        cur = self.con.cursor()
-        cur.execute("select %s(f) from test"%self.name)
-        val = cur.fetchone()[0]
-        
-        if isfloat(val) and isfloat(self.expect_float):
-            self.failUnlessAlmostEqual(val, self.expect_float, 6)
-        else:
-            self.failUnlessEqual(val, self.expect_float)
+
+        if hasattr(self,'expect_float'):
+            cur = self.con.cursor()
+            cur.execute("select %s(f) from test"%self.name)
+            val = cur.fetchone()[0]
+            
+            if isfloat(val) and isfloat(self.expect_float):
+                self.failUnlessAlmostEqual(val, self.expect_float, 6)
+            else:
+                self.failUnlessEqual(val, self.expect_float)
 
     def Check_neg(self):
         """check how aggregate handles negative float data"""
-        cur = self.con.cursor()
-        cur.execute("select %s(neg) from test"%self.name)
-        val = cur.fetchone()[0]
-        
-        if isfloat(val) and isfloat(self.expect_neg):
-            self.failUnlessAlmostEqual(val, self.expect_neg, 6)
-        else:
-            self.failUnlessEqual(val, self.expect_neg)
+
+        if hasattr(self,'expect_neg'):
+            cur = self.con.cursor()
+            cur.execute("select %s(neg) from test"%self.name)
+            val = cur.fetchone()[0]
+            
+            if isfloat(val) and isfloat(self.expect_neg):
+                self.failUnlessAlmostEqual(val, self.expect_neg, 6)
+            else:
+                self.failUnlessEqual(val, self.expect_neg)
             
     def Check_text(self):
         """check how aggregate handles text data"""
-        cur = self.con.cursor()
-        cur.execute("select %s(t) from test"%self.name)
-        val = cur.fetchone()[0]
-        
-        if isfloat(val) and isfloat(self.expect_float):
-            self.failUnlessAlmostEqual(val, self.expect_text, 6)
-        else:
-            self.failUnlessEqual(val, self.expect_text)
+
+        if hasattr(self,'expect_text'):
+            cur = self.con.cursor()
+            cur.execute("select %s(t) from test"%self.name)
+            val = cur.fetchone()[0]
+            
+            if isfloat(val) and isfloat(self.expect_text):
+                self.failUnlessAlmostEqual(val, self.expect_text, 6)
+            else:
+                self.failUnlessEqual(val, self.expect_text)
         
     def Check_empty(self):
         """check how aggregate handles an empty list"""
-        cur = self.con.cursor()
-        cur.execute("select %s(empty) from test"%self.name)
-        val = cur.fetchone()[0]
-        
-        if isfloat(val) and isfloat(self.expect_float):
-            self.failUnlessAlmostEqual(val, self.expect_empty, 6)
-        else:
-            self.failUnlessEqual(val, self.expect_empty)
+
+        if hasattr(self,'expect_empty'):
+            cur = self.con.cursor()
+            cur.execute("select %s(empty) from test"%self.name)
+            val = cur.fetchone()[0]
+            
+            if isfloat(val) and isfloat(self.expect_empty):
+                self.failUnlessAlmostEqual(val, self.expect_empty, 6)
+            else:
+                self.failUnlessEqual(val, self.expect_empty)
 
     def Check_nan(self):
         """check how aggregate handles float data containing nan values"""
-        cur = self.con.cursor()
-        cur.execute("select %s(hasnan) from test"%self.name)
-        val = cur.fetchone()[0]
-        
-        if isfloat(val) and isfloat(self.expect_float):
-            self.failUnlessAlmostEqual(val, self.expect_nan, 6)
-        else:
-            self.failUnlessEqual(val, self.expect_nan)
+
+        if hasattr(self,'expect_nan'):
+            cur = self.con.cursor()
+            cur.execute("select %s(hasnan) from test"%self.name)
+            val = cur.fetchone()[0]
+            
+            if isfloat(val) and isfloat(self.expect_nan):
+                self.failUnlessAlmostEqual(val, self.expect_nan, 6)
+            else:
+                self.failUnlessEqual(val, self.expect_nan)
 
     def Check_inf(self):
         """check how aggregate handles float data containing inf values"""
-        cur = self.con.cursor()
-        cur.execute("select %s(hasinf) from test"%self.name)
-        val = cur.fetchone()[0]
         
-        if isfloat(val) and isfloat(self.expect_float):
-            self.failUnlessAlmostEqual(val, self.expect_inf, 6)
-        else:
-            self.failUnlessEqual(val, self.expect_inf)
+        if hasattr(self,'expect_inf'):
+            cur = self.con.cursor()
+            cur.execute("select %s(hasinf) from test"%self.name)
+            val = cur.fetchone()[0]
+            
+            if isfloat(val) and isfloat(self.expect_inf):
+                self.failUnlessAlmostEqual(val, self.expect_inf, 6)
+            else:
+                self.failUnlessEqual(val, self.expect_inf)
 
     def Check_modefive(self):
         """special func to check mode aggregate"""
@@ -185,7 +196,7 @@ class aggTests(unittest.TestCase):
 # Here a test class is defined for each aggregator as a metaclass
 
 hasnanTests=\
-    new.classobj('hasnanTests',(aggTests,),
+    type('hasnanTests',(aggTests,),
                  { 'name':'kurt',
                    'aggregate':pystaggrelite3.hasnan,
                    'expect_float':False,
@@ -198,7 +209,7 @@ hasnanTests=\
                 )
 
 hasinfTests=\
-    new.classobj('hasinfTests',(aggTests,),
+    type('hasinfTests',(aggTests,),
                  { 'name':'kurt',
                    'aggregate':pystaggrelite3.hasinf,
                    'expect_float':False,
@@ -211,12 +222,12 @@ hasinfTests=\
                 )
 
 arbitraryTests=\
-    new.classobj('arbitraryTests',(aggTests,),
+    type('arbitraryTests',(aggTests,),
                  { 'name':'arbitrary',
                    'aggregate':pystaggrelite3.arbitrary,
                    'expect_float':1.1,
                    'expect_neg':-1.1,
-                   'expect_text':u'1.1',
+                   'expect_text':'1.1',
                    'expect_empty':None,
                    'expect_nan':1.1,
                    'expect_inf':1.1
@@ -224,33 +235,33 @@ arbitraryTests=\
                  )
 
 datarangeTests=\
-    new.classobj('datarangeTests',(aggTests,),
-                 {'name':'datarange',
-                  'aggregate':pystaggrelite3.datarange,
-                  'expect_float':13.040000000000001,
+    type('datarangeTests',(aggTests,),
+                 { 'name':'datarange',
+                   'aggregate':pystaggrelite3.datarange,
+                   'expect_float':13.040000000000001,
                    'expect_neg':13.040000000000001,
-                  'expect_text':13.040000000000001,
-                  'expect_empty':None,
-                  'expect_nan':13.040000000000001,
-                  'expect_inf':float('inf')
+                   'expect_text':13.040000000000001,
+                   'expect_empty':None,
+                   'expect_nan':13.040000000000001,
+                   'expect_inf':float('inf')
                  }
                 )
 
 abs_meanTests=\
-    new.classobj('abs_meanTests',(aggTests,),
-                 {'name':'abs_mean',
-                  'aggregate':pystaggrelite3.abs_mean,
-                  'expect_float':7.864285714285715,
+    type('abs_meanTests',(aggTests,),
+                 { 'name':'abs_mean',
+                   'aggregate':pystaggrelite3.abs_mean,
+                   'expect_float':7.864285714285715,
                    'expect_neg':7.864285714285715,
-                  'expect_text':7.864285714285715,
-                  'expect_empty':None,
-                  'expect_nan':7.876923076923077,
-                  'expect_inf':float('inf')
+                   'expect_text':7.864285714285715,
+                   'expect_empty':None,
+                   'expect_nan':7.876923076923077,
+                   'expect_inf':float('inf')
                  }
                 )
 
 geometric_meanTests=\
-    new.classobj('geometric_meanTests',(aggTests,),
+    type('geometric_meanTests',(aggTests,),
                  {'name':'geometric_mean',
                   'aggregate':pystaggrelite3.geometric_mean,
                   'expect_float':6.450756824711689,
@@ -263,35 +274,30 @@ geometric_meanTests=\
                 )
 
 medianTests=\
-    new.classobj('medianTests',(aggTests,),
-                 {'name':'median',
-                  'aggregate':pystaggrelite3.median,
-                  'expect_float':8.25,
+    type('medianTests',(aggTests,),
+                 { 'name':'median',
+                   'aggregate':pystaggrelite3.median,
+                   'expect_float':8.25,
                    'expect_neg':-8.25,
-                  'expect_text':8.25,
-                  'expect_empty':None,
-                  'expect_nan':8.8,
-                  'expect_inf':9.350000000000001,
-                  'expect_modefive':6.5
+                   'expect_text':8.25,
+                   'expect_empty':None,
+                   'expect_nan':8.8,
+                   'expect_inf':9.350000000000001,
+                   'expect_modefive':6.5
                  }
                 )
 
 modeTests=\
-    new.classobj('modeTests',(aggTests,),
+    type('modeTests',(aggTests,),
                  { 'name':'mode',
                    'aggregate':pystaggrelite3.mode,
-                   'expect_float':5.5,
-                   'expect_neg':-5.5,
-                   'expect_text':5.5,
                    'expect_empty':None,
-                   'expect_nan':5.5,
-                   'expect_inf':5.5,
                    'expect_modefive':5.0
                  }
                 )
 
 varpTests=\
-    new.classobj('varpTests',(aggTests,),
+    type('varpTests',(aggTests,),
                  { 'name':'varp',
                    'aggregate':pystaggrelite3.varp,
                    'expect_float':15.976081632653049,
@@ -304,7 +310,7 @@ varpTests=\
                 )
 
 varTests=\
-    new.classobj('varTests',(aggTests,),
+    type('varTests',(aggTests,),
                  { 'name':'var',
                    'aggregate':pystaggrelite3.var,
                    'expect_float':17.205010989010976,
@@ -317,7 +323,7 @@ varTests=\
                 )
 
 stdevpTests=\
-    new.classobj('stdevpTests',(aggTests,),
+    type('stdevpTests',(aggTests,),
                  { 'name':'stdevp',
                    'aggregate':pystaggrelite3.stdevp,
                    'expect_float':3.9970090858857263,
@@ -330,7 +336,7 @@ stdevpTests=\
                 )
 
 stdevTests=\
-    new.classobj('stdevTests',(aggTests,),
+    type('stdevTests',(aggTests,),
                  { 'name':'stdev',
                    'aggregate':pystaggrelite3.stdev,
                    'expect_float':4.14789235504141,
@@ -343,7 +349,7 @@ stdevTests=\
                 )
 
 semTests=\
-    new.classobj('semTests',(aggTests,),
+    type('semTests',(aggTests,),
                  { 'name':'sem',
                    'aggregate':pystaggrelite3.sem,
                    'expect_float':1.108570862127418,
@@ -356,7 +362,7 @@ semTests=\
                 )
 
 ciTests=\
-    new.classobj('ciTests',(aggTests,),
+    type('ciTests',(aggTests,),
                  { 'name':'ci',
                    'aggregate':pystaggrelite3.ci,
                    'expect_float':2.1727988897697394,
@@ -369,7 +375,7 @@ ciTests=\
                 )
 
 rmsTests=\
-    new.classobj('rmsTests',(aggTests,),
+    type('rmsTests',(aggTests,),
                  { 'name':'rms',
                    'aggregate':pystaggrelite3.rms,
                    'expect_float':8.821738571765286,
@@ -382,7 +388,7 @@ rmsTests=\
                 )
 
 prodTests=\
-    new.classobj('prodTests',(aggTests,),
+    type('prodTests',(aggTests,),
                  { 'name':'prod',
                    'aggregate':pystaggrelite3.prod,
                    'expect_float':216047570729.97736,
@@ -395,7 +401,7 @@ prodTests=\
                 )
 
 skewTests=\
-    new.classobj('skewTests',(aggTests,),
+    type('skewTests',(aggTests,),
                  { 'name':'skew',
                    'aggregate':pystaggrelite3.skew,
                    'expect_float':-0.1322935682076316,
@@ -408,7 +414,7 @@ skewTests=\
                 )
 
 kurtTests=\
-    new.classobj('kurtTests',(aggTests,),
+    type('kurtTests',(aggTests,),
                  { 'name':'kurt',
                    'aggregate':pystaggrelite3.kurt,
                    'expect_float':-1.1706824430972933,
