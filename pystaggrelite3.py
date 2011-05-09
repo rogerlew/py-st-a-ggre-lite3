@@ -56,18 +56,20 @@ functions:
     hasinf(X)
     hasnan(X)
     kurt(X)
+    kurtp(X)
     median(X)
     mode(X)
     prod(X)
     rms(X)
     sem(X)
     skew(X)
+    skewp(X)
     stdev(X)
     stdevp(X)
     var(X)
     varp(X)
 
-The respective docstrings for these modules provid more
+The respective docstrings for these modules provide more
 information as to there specific functionality. The aggregate
 functions ignore NULL, non-float text, and nan values. When X
 is empty the aggregates return None. Inf values may cause the
@@ -578,7 +580,7 @@ class prod:
         
         return self.p
 
-class skew:
+class skewp:
     """
     skewness population estimate is based on the
     cumulants calculated from the raw moments.
@@ -591,6 +593,7 @@ class skew:
         http://mathworld.wolfram.com/Skewness.html
         http://mathworld.wolfram.com/RawMoment.html
         http://mathworld.wolfram.com/Cumulant.html
+        http://www.tc3.edu/instruct/sbrown/stat/shape.htm#SkewnessCompute
     """
     def __init__(self):
         self.s1=0.
@@ -628,12 +631,63 @@ class skew:
         
         return k3/k2**1.5
     
-class kurt:
+class skew:
+    """
+    skewness sample estimate is based on the
+    cumulants calculated from the raw moments.
+
+    G_1 = \frac{\sqrt{N(N-1)}}{N-2} \frac{k_3}{k_2^{3/2}},
+    where {k_3} and {k_2} are the 3rd and 2nd order cumulants
+    respectively.
+    
+    see also:
+        http://mathworld.wolfram.com/Skewness.html
+        http://mathworld.wolfram.com/RawMoment.html
+        http://mathworld.wolfram.com/Cumulant.html
+        http://www.tc3.edu/instruct/sbrown/stat/shape.htm#SkewnessCompute
+    """
+    def __init__(self):
+        self.s1=0.
+        self.s2=0.
+        self.s3=0.
+        self.N=0
+
+    def step(self, value):
+        if isfloat(value):
+            v=float(value)
+            if not isnan(v):
+                ov=copy(v)
+                self.s1+=v
+                v*=ov
+                self.s2+=v
+                v*=ov
+                self.s3+=v
+                self.N+=1
+        
+    def finalize(self):
+        if self.N<3:
+            return None
+        
+        self.N=float(self.N)
+
+        # calculate unbiased raw moments
+        m1=self.s1/self.N
+        m2=self.s2/self.N
+        m3=self.s3/self.N
+
+        # from the raw moments calculate cumulants
+        k1 = m1
+        k2 = m2 - m1**2
+        k3 = 2.*m1**3. - 3.*m1*m2 + m3
+        
+        return sqrt(self.N*(self.N-1.))/(self.N-2.)*k3/k2**1.5
+    
+class kurtp:
     """
     kurtosis population estimate is based on the
     cumulants calculated from the raw moments.
 
-    G_2 & = \frac{k_4}{k_{2}^2},
+    G_2 = \frac{k_4}{k_{2}^2},
     where {k_4} and {k_2} are the 4th and 2nd order cumulants
     respectively.
     
@@ -682,7 +736,66 @@ class kurt:
         k4 = -6.*m1**4 + 12.*(m1**2)*m2 -3.*m2**2. - 4.*m1*m3 + m4
         
         return k4/k2**2.
+    
+class kurt:
+    """
+    skewness sample estimate is based on the
+    cumulants calculated from the raw moments.
+
+    g_2 = \frac{k_4}{k_{2}^2},
+    
+    G_2 = \frac{N-1}{(N-2)(N-3)}[(N+1)g_2 + 6]
+    where {k_4} and {k_2} are the 4th and 2nd order cumulants
+    respectively.
+    
+    see also:
+        http://mathworld.wolfram.com/Kurtosis.html
+        http://mathworld.wolfram.com/RawMoment.html
+        http://mathworld.wolfram.com/Cumulant.html
+        http://www.tc3.edu/instruct/sbrown/stat/shape.htm#KurtosisCompute
+    """
+    def __init__(self):
+        self.s1=0.
+        self.s2=0.
+        self.s3=0.
+        self.s4=0.
+        self.N=0
+
+    def step(self, value):
+        if isfloat(value):
+            v=float(value)
+            if not isnan(v):
+                ov=copy(v)
+                self.s1+=v
+                v*=ov
+                self.s2+=v
+                v*=ov
+                self.s3+=v
+                v*=ov
+                self.s4+=v
+                self.N+=1
         
+    def finalize(self):
+        if self.N<3:
+            return None
+
+        self.N=float(self.N)
+        
+        # calculate unbiased raw moments
+        m1=self.s1/self.N
+        m2=self.s2/self.N
+        m3=self.s3/self.N
+        m4=self.s4/self.N
+
+        # from the raw moments calculate cumulants
+##        k1 = m1
+        k2 = m2 - m1**2
+##        k3 = 2.*m1**3. - 3.*m1*m2 + m3
+        k4 = -6.*m1**4 + 12.*(m1**2)*m2 -3.*m2**2. - 4.*m1*m3 + m4
+        
+        g2=k4/k2**2.
+        return (self.N-1.)/((self.N-2.)*(self.N-3.))*((self.N+1.)*g2+6.)
+    
 if __name__ == "__main__":
 ##    import doctest
 ##    doctest.testmod()

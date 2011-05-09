@@ -451,6 +451,19 @@ skewTests=\
     type('skewTests',(aggTests,),
                  { 'name':'skew',
                    'aggregate':pystaggrelite3.skew,
+                   'expect_float':-0.14872815083272467,
+                   'expect_neg':0.14872815083272467,
+                   'expect_text':-0.14872815083272467,
+                   'expect_empty':None,
+                   'expect_nan':-0.15515079014695105,
+                   'expect_inf':None
+                 }
+                )
+
+skewpTests=\
+    type('skewpTests',(aggTests,),
+                 { 'name':'skewp',
+                   'aggregate':pystaggrelite3.skewp,
                    'expect_float':-0.1322935682076316,
                    'expect_neg':0.1322935682076316,
                    'expect_text':-0.1322935682076316,
@@ -464,6 +477,19 @@ kurtTests=\
     type('kurtTests',(aggTests,),
                  { 'name':'kurt',
                    'aggregate':pystaggrelite3.kurt,
+                   'expect_float':-1.138508154575547,
+                   'expect_neg':-1.138508154575547,
+                   'expect_text':-1.138508154575547,
+                   'expect_empty':None,
+                   'expect_nan':-1.329835362052564,
+                   'expect_inf':None
+                 }
+                )
+
+kurtpTests=\
+    type('kurtTests',(aggTests,),
+                 { 'name':'kurtp',
+                   'aggregate':pystaggrelite3.kurtp,
                    'expect_float':-1.1706824430972933,
                    'expect_neg':-1.1706824430972933,
                    'expect_text':-1.1706824430972933,
@@ -486,7 +512,9 @@ def suite():
                unittest.makeSuite(ciTests,             "Check"),
                unittest.makeSuite(rmsTests,            "Check"),
                unittest.makeSuite(prodTests,           "Check"),
+               unittest.makeSuite(skewpTests,          "Check"),
                unittest.makeSuite(skewTests,           "Check"),
+               unittest.makeSuite(kurtpTests,          "Check"),
                unittest.makeSuite(kurtTests,           "Check"),
                unittest.makeSuite(datarangeTests,      "Check"),
                unittest.makeSuite(abs_meanTests,       "Check"),
