@@ -37,6 +37,7 @@ defined in the stat_aggregate_funcs module.
 
 import unittest
 import sqlite3 as sqlite
+import math
 
 import pystaggrelite3
 from pystaggrelite3 import isfloat
@@ -62,8 +63,8 @@ class aggTests(unittest.TestCase):
                 hasnan float,
                 hasinf float,
                 modefive float,
-                n,
-                b blob
+                n1 float,
+                n2 float
                 )
             """)
 
@@ -93,6 +94,11 @@ class aggTests(unittest.TestCase):
                         [('%i'%i,) for i in range(1,6)]+\
                         [('5',)]+\
                         [('%i'%i,) for i in range(5,15)])
+
+        cur.execute("insert into test(n1) values (4)")
+         
+        cur.execute("insert into test(n2) values (4)")
+        cur.execute("insert into test(n2) values (5)")
 
         # register user defined aggregate with sqlite
         self.con.create_aggregate(self.name, 1, self.aggregate)
@@ -193,6 +199,33 @@ class aggTests(unittest.TestCase):
             else:
                 self.failUnlessEqual(val, self.expect_modefive)
 
+    def Check_n1(self):
+        """special func to check an array of 1"""
+
+        if hasattr(self,'expect_n1'):
+            cur = self.con.cursor()
+            cur.execute("select %s(n1) from test"%self.name)
+            val = cur.fetchone()[0]
+            
+            if isfloat(val) and isfloat(self.expect_n1):
+                self.failUnlessAlmostEqual(val, self.expect_n1, 6)
+            else:
+                self.failUnlessEqual(val, self.expect_n1)
+
+    def Check_n2(self):
+        """special func to check an array of 2"""
+
+        if hasattr(self,'expect_n2'):
+            cur = self.con.cursor()
+            cur.execute("select %s(n2) from test"%self.name)
+            val = cur.fetchone()[0]
+            
+            if isfloat(val) and isfloat(self.expect_n2):
+                self.failUnlessAlmostEqual(val, self.expect_n2, 6)
+            else:
+                self.failUnlessEqual(val, self.expect_n2)
+
+                
 # Here a test class is defined for each aggregator as a metaclass
 
 hasnanTests=\
@@ -305,7 +338,9 @@ varpTests=\
                    'expect_text':15.976081632653049,
                    'expect_empty':None,
                    'expect_nan':17.20277514792899 ,
-                   'expect_inf':None
+                   'expect_inf':None,
+                   'expect_n1':0.,
+                   'expect_n2':0.25
                  }
                 )
 
@@ -318,7 +353,9 @@ varTests=\
                    'expect_text':17.205010989010976,
                    'expect_empty':None,
                    'expect_nan':18.636339743589737,
-                   'expect_inf':None
+                   'expect_inf':None,
+                   'expect_n1':None,
+                   'expect_n2':0.5
                  }
                 )
 
@@ -331,7 +368,9 @@ stdevpTests=\
                    'expect_text':3.9970090858857263,
                    'expect_empty':None,
                    'expect_nan':4.147622830963417,
-                   'expect_inf':None
+                   'expect_inf':None,
+                   'expect_n1':0.0,
+                   'expect_n2':0.5
                  }
                 )
 
@@ -344,7 +383,9 @@ stdevTests=\
                    'expect_text':4.14789235504141,
                    'expect_empty':None,
                    'expect_nan':4.316982712913006,
-                   'expect_inf':None
+                   'expect_inf':None,
+                   'expect_n1':None,
+                   'expect_n2':math.sqrt(2.)/2.
                  }
                 )
 
@@ -357,7 +398,9 @@ semTests=\
                    'expect_text':1.108570862127418,
                    'expect_empty':None,
                    'expect_nan':1.1973155789768832,
-                   'expect_inf':None
+                   'expect_inf':None,
+                   'expect_n1':None,
+                   'expect_n2':0.5
                  }
                 )
 
@@ -370,7 +413,9 @@ ciTests=\
                    'expect_text':2.1727988897697394,
                    'expect_empty':None,
                    'expect_nan':2.3467385347946914,
-                   'expect_inf':None
+                   'expect_inf':None,
+                   'expect_n1':None,
+                   'expect_n2':0.5*1.96
                  }
                 )
 
@@ -396,7 +441,9 @@ prodTests=\
                    'expect_text':216047570729.97736,
                    'expect_empty':None,
                    'expect_nan':28058126068.82824,
-                   'expect_inf':float('inf')
+                   'expect_inf':float('inf'),
+                   'expect_n1':4.,
+                   'expect_n2':20.
                  }
                 )
 

@@ -310,7 +310,7 @@ class var:
         
     def finalize(self):
         [n,oldM,newM,oldS,newS]=self.x
-        if n==0:
+        if n<2:
             return None
         
         return newS/(n-1.)
@@ -355,6 +355,8 @@ class varp:
         [n,oldM,newM,oldS,newS]=self.x
         if n==0:
             return None
+        if n==1:
+            return 0.
         
         return newS/float(n)
 
@@ -396,7 +398,7 @@ class stdev:
         
     def finalize(self):
         [n,oldM,newM,oldS,newS]=self.x
-        if n==0:
+        if n<2:
             return None
         
         return sqrt(newS/(n-1.))
@@ -442,6 +444,8 @@ class stdevp:
         [n,oldM,newM,oldS,newS]=self.x
         if n==0:
             return None
+        if n==1:
+            return 0.
         
         return sqrt(newS/float(n))
 
@@ -482,7 +486,7 @@ class sem:
         
     def finalize(self):
         [n,oldM,newM,oldS,newS]=self.x
-        if n==0:
+        if n<2:
             return None
         
         return sqrt(newS/(n-1.))/sqrt(n)
@@ -523,7 +527,7 @@ class ci:
         
     def finalize(self):
         [n,oldM,newM,oldS,newS]=self.x
-        if n==0:
+        if n<2:
             return None
         
         return sqrt(newS/(n-1.))/sqrt(n)*1.96
