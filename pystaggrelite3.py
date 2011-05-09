@@ -285,24 +285,35 @@ class var:
     s^2 = \frac{1}{N-1} \sum_{i=1}^N (x_i - \overline{x})^2,
     """
     def __init__(self):
-        self.s=0.
-        self.ss=0.
-        self.N=0
+        self.x=[0.,-1.,-1.,-1.,-1.]
 
     def step(self, value):
+        [n,oldM,newM,oldS,newS]=self.x
+        
         if isfloat(value):
             v=float(value)
             if not isnan(v):
-                self.s+=v
-                self.ss+=v**2.
-                self.N+=1
+                n+=1
+                
+                if (n == 1):
+                    oldM = newM = v
+                    oldS = 0.0
+                else:
+                    newM = oldM + (v - oldM)/n
+                    newS = oldS + (v - oldM)*(v - newM)
+
+                    # set up for next iteration
+                    oldM = copy(newM)
+                    oldS = copy(newS)
+                    
+                self.x=[n,oldM,newM,oldS,newS]
         
     def finalize(self):
-        if self.N==0:
+        [n,oldM,newM,oldS,newS]=self.x
+        if n==0:
             return None
         
-        self.N=float(self.N)
-        return (self.N/(self.N-1.))*(self.ss/(self.N)-(self.s/self.N)**2.)
+        return newS/(n-1.)
     
 class varp:
     """
@@ -317,24 +328,35 @@ class varp:
     {s_N}^2 = \frac{1}{N} \sum_{i=1}^N (x_i - \overline{x})^2,
     """
     def __init__(self):
-        self.s=0.
-        self.ss=0.
-        self.N=0
+        self.x=[0.,-1.,-1.,-1.,-1.]
 
     def step(self, value):
+        [n,oldM,newM,oldS,newS]=self.x
+        
         if isfloat(value):
             v=float(value)
             if not isnan(v):
-                self.s+=v
-                self.ss+=v**2.
-                self.N+=1
+                n+=1
+                
+                if (n == 1):
+                    oldM = newM = v
+                    oldS = 0.0
+                else:
+                    newM = oldM + (v - oldM)/n
+                    newS = oldS + (v - oldM)*(v - newM)
 
+                    # set up for next iteration
+                    oldM = copy(newM)
+                    oldS = copy(newS)
+                    
+                self.x=[n,oldM,newM,oldS,newS]
+        
     def finalize(self):
-        if self.N==0:
+        [n,oldM,newM,oldS,newS]=self.x
+        if n==0:
             return None
-
-        self.N=float(self.N)
-        return self.ss/self.N-(self.s/self.N)**2.
+        
+        return newS/float(n)
 
 class stdev:
     """
@@ -349,25 +371,35 @@ class stdev:
     s^2 = \sqrt{\frac{1}{N-1} \sum_{i=1}^N (x_i - \overline{x})^2},
     """
     def __init__(self):
-        self.s=0.
-        self.ss=0.
-        self.N=0
+        self.x=[0.,-1.,-1.,-1.,-1.]
 
     def step(self, value):
+        [n,oldM,newM,oldS,newS]=self.x
+        
         if isfloat(value):
             v=float(value)
             if not isnan(v):
-                self.s+=v
-                self.ss+=v**2.
-                self.N+=1
+                n+=1
+                
+                if (n == 1):
+                    oldM = newM = v
+                    oldS = 0.0
+                else:
+                    newM = oldM + (v - oldM)/n
+                    newS = oldS + (v - oldM)*(v - newM)
+
+                    # set up for next iteration
+                    oldM = copy(newM)
+                    oldS = copy(newS)
+                    
+                self.x=[n,oldM,newM,oldS,newS]
         
     def finalize(self):
-        if self.N==0:
+        [n,oldM,newM,oldS,newS]=self.x
+        if n==0:
             return None
-
-        self.N=float(self.N)
-        return sqrt(self.N/(self.N-1.))*\
-               sqrt(self.ss/self.N-(self.s/self.N)**2.)
+        
+        return sqrt(newS/(n-1.))
     
 class stdevp:
     """
@@ -383,24 +415,35 @@ class stdevp:
     s_N = \sqrt{\frac{1}{N} \sum_{i=1}^N (x_i - \overline{x})^2}. 
     """
     def __init__(self):
-        self.s=0.
-        self.ss=0.
-        self.N=0
+        self.x=[0.,-1.,-1.,-1.,-1.]
 
     def step(self, value):
+        [n,oldM,newM,oldS,newS]=self.x
+        
         if isfloat(value):
             v=float(value)
             if not isnan(v):
-                self.s+=v
-                self.ss+=v**2.
-                self.N+=1
+                n+=1
+                
+                if (n == 1):
+                    oldM = newM = v
+                    oldS = 0.0
+                else:
+                    newM = oldM + (v - oldM)/n
+                    newS = oldS + (v - oldM)*(v - newM)
+
+                    # set up for next iteration
+                    oldM = copy(newM)
+                    oldS = copy(newS)
+                    
+                self.x=[n,oldM,newM,oldS,newS]
         
     def finalize(self):
-        if self.N==0:
+        [n,oldM,newM,oldS,newS]=self.x
+        if n==0:
             return None
-
-        self.N=float(self.N)
-        return sqrt(self.ss/self.N-(self.s/self.N)**2.)
+        
+        return sqrt(newS/float(n))
 
 class sem:
     """
@@ -414,26 +457,35 @@ class sem:
     where {s} is the sample standard deviation
     """
     def __init__(self):
-        self.s=0.
-        self.ss=0.
-        self.N=0
+        self.x=[0.,-1.,-1.,-1.,-1.]
 
     def step(self, value):
+        [n,oldM,newM,oldS,newS]=self.x
+        
         if isfloat(value):
             v=float(value)
             if not isnan(v):
-                self.s+=v
-                self.ss+=v**2.
-                self.N+=1
+                n+=1
+                
+                if (n == 1):
+                    oldM = newM = v
+                    oldS = 0.0
+                else:
+                    newM = oldM + (v - oldM)/n
+                    newS = oldS + (v - oldM)*(v - newM)
+
+                    # set up for next iteration
+                    oldM = copy(newM)
+                    oldS = copy(newS)
+                    
+                self.x=[n,oldM,newM,oldS,newS]
         
     def finalize(self):
-        if self.N==0:
+        [n,oldM,newM,oldS,newS]=self.x
+        if n==0:
             return None
-
-        self.N=float(self.N)
-        return sqrt(self.N/(self.N-1.))*\
-               sqrt(self.ss/self.N-(self.s/self.N)**2.)/\
-               sqrt(self.N)
+        
+        return sqrt(newS/(n-1.))/sqrt(n)
 
 class ci:
     """
@@ -446,26 +498,35 @@ class ci:
     CI=1.96*SE_\bar{x}\
     """
     def __init__(self):
-        self.s=0.
-        self.ss=0.
-        self.N=0
+        self.x=[0.,-1.,-1.,-1.,-1.]
 
     def step(self, value):
+        [n,oldM,newM,oldS,newS]=self.x
+        
         if isfloat(value):
             v=float(value)
             if not isnan(v):
-                self.s+=v
-                self.ss+=v**2.
-                self.N+=1
+                n+=1
+                
+                if (n == 1):
+                    oldM = newM = v
+                    oldS = 0.0
+                else:
+                    newM = oldM + (v - oldM)/n
+                    newS = oldS + (v - oldM)*(v - newM)
+
+                    # set up for next iteration
+                    oldM = copy(newM)
+                    oldS = copy(newS)
+                    
+                self.x=[n,oldM,newM,oldS,newS]
         
     def finalize(self):
-        if self.N==0:
+        [n,oldM,newM,oldS,newS]=self.x
+        if n==0:
             return None
-
-        self.N=float(self.N)
-        return 1.96*sqrt(self.N/(self.N-1.))*\
-               sqrt(self.ss/self.N-(self.s/self.N)**2.)/\
-               sqrt(self.N)
+        
+        return sqrt(newS/(n-1.))/sqrt(n)*1.96
     
 class rms:
     """
