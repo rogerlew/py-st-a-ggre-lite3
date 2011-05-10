@@ -38,7 +38,9 @@ class aggTests(unittest.TestCase):
                 hasinf float,
                 modefive float,
                 n1 float,
-                n2 float
+                n2 float,
+                ones float,
+                zeros float
                 )
             """)
 
@@ -74,7 +76,13 @@ class aggTests(unittest.TestCase):
         cur.execute("insert into test(n2) values (4)")
         cur.execute("insert into test(n2) values (5)")
 
-        # register user defined aggregate with sqlite
+        cur.executemany("insert into test(ones) values (?)",    
+                        [('1',) for i in range(1,10)])
+
+        cur.executemany("insert into test(zeros) values (?)",    
+                        [('0',) for i in range(1,10)])
+        
+        # register user defined aggregate with sqlite3
         self.con.create_aggregate(self.name, 1, self.aggregate)
 
     def tearDown(self):
@@ -199,6 +207,31 @@ class aggTests(unittest.TestCase):
             else:
                 self.failUnlessEqual(val, self.expect_n2)
 
+    def Check_ones(self):
+        """special func to check when array is all ones"""
+
+        if hasattr(self,'expect_ones'):
+            cur = self.con.cursor()
+            cur.execute("select %s(ones) from test"%self.name)
+            val = cur.fetchone()[0]
+            
+            if isfloat(val) and isfloat(self.expect_ones):
+                self.failUnlessAlmostEqual(val, self.expect_ones, 6)
+            else:
+                self.failUnlessEqual(val, self.expect_ones)
+
+    def Check_zeros(self):
+        """special func to check when array is all ones"""
+
+        if hasattr(self,'expect_zeros'):
+            cur = self.con.cursor()
+            cur.execute("select %s(zeros) from test"%self.name)
+            val = cur.fetchone()[0]
+            
+            if isfloat(val) and isfloat(self.expect_ones):
+                self.failUnlessAlmostEqual(val, self.expect_zeros, 6)
+            else:
+                self.failUnlessEqual(val, self.expect_zeros)
                 
 # Here a test class is defined for each aggregator as a metaclass
 
@@ -211,7 +244,9 @@ hasnanTests=\
                    'expect_text':False,
                    'expect_empty':False,
                    'expect_nan':True,
-                   'expect_inf':False
+                   'expect_inf':False,
+                   'expect_ones':False,
+                   'expect_zeros':False
                  }
                 )
 
@@ -224,7 +259,9 @@ hasinfTests=\
                    'expect_text':False,
                    'expect_empty':False,
                    'expect_nan':False,
-                   'expect_inf':True
+                   'expect_inf':True,
+                   'expect_ones':False,
+                   'expect_zeros':False
                  }
                 )
 
@@ -237,7 +274,9 @@ arbitraryTests=\
                    'expect_text':'1.1',
                    'expect_empty':None,
                    'expect_nan':1.1,
-                   'expect_inf':1.1
+                   'expect_inf':1.1,
+                   'expect_ones':1.,
+                   'expect_zeros':0
                   }
                  )
 
@@ -250,7 +289,9 @@ datarangeTests=\
                    'expect_text':13.040000000000001,
                    'expect_empty':None,
                    'expect_nan':13.040000000000001,
-                   'expect_inf':float('inf')
+                   'expect_inf':float('inf'),
+                   'expect_ones':0.,
+                   'expect_zeros':0.
                  }
                 )
 
@@ -263,20 +304,24 @@ abs_meanTests=\
                    'expect_text':7.864285714285715,
                    'expect_empty':None,
                    'expect_nan':7.876923076923077,
-                   'expect_inf':float('inf')
+                   'expect_inf':float('inf'),
+                   'expect_ones':1.,
+                   'expect_zeros':0.
                  }
                 )
 
 geometric_meanTests=\
     type('geometric_meanTests',(aggTests,),
-                 {'name':'geometric_mean',
-                  'aggregate':pystaggrelite3.geometric_mean,
-                  'expect_float':6.450756824711689,
-                  'expect_neg':None,
-                  'expect_text':6.450756824711689,
-                  'expect_empty':None,
-                  'expect_nan':6.363511307721573,
-                  'expect_inf':float('inf')
+                 { 'name':'geometric_mean',
+                   'aggregate':pystaggrelite3.geometric_mean,
+                   'expect_float':6.450756824711689,
+                   'expect_neg':None,
+                   'expect_text':6.450756824711689,
+                   'expect_empty':None,
+                   'expect_nan':6.363511307721573,
+                   'expect_inf':float('inf'),
+                   'expect_ones':1.,
+                   'expect_zeros':0.
                  }
                 )
 
@@ -290,7 +335,9 @@ medianTests=\
                    'expect_empty':None,
                    'expect_nan':8.8,
                    'expect_inf':9.350000000000001,
-                   'expect_modefive':6.5
+                   'expect_modefive':6.5,
+                   'expect_ones':1.,
+                   'expect_zeros':0.
                  }
                 )
 
@@ -299,7 +346,9 @@ modeTests=\
                  { 'name':'mode',
                    'aggregate':pystaggrelite3.mode,
                    'expect_empty':None,
-                   'expect_modefive':5.0
+                   'expect_modefive':5.0,
+                   'expect_ones':1.,
+                   'expect_zeros':0.
                  }
                 )
 
@@ -314,7 +363,9 @@ varpTests=\
                    'expect_nan':17.20277514792899 ,
                    'expect_inf':None,
                    'expect_n1':0.,
-                   'expect_n2':0.25
+                   'expect_n2':0.25,
+                   'expect_ones':0.,
+                   'expect_zeros':0.
                  }
                 )
 
@@ -329,7 +380,9 @@ varTests=\
                    'expect_nan':18.636339743589737,
                    'expect_inf':None,
                    'expect_n1':None,
-                   'expect_n2':0.5
+                   'expect_n2':0.5,
+                   'expect_ones':0.,
+                   'expect_zeros':0.
                  }
                 )
 
@@ -344,7 +397,9 @@ stdevpTests=\
                    'expect_nan':4.147622830963417,
                    'expect_inf':None,
                    'expect_n1':0.0,
-                   'expect_n2':0.5
+                   'expect_n2':0.5,
+                   'expect_ones':0.,
+                   'expect_zeros':0.
                  }
                 )
 
@@ -359,7 +414,9 @@ stdevTests=\
                    'expect_nan':4.316982712913006,
                    'expect_inf':None,
                    'expect_n1':None,
-                   'expect_n2':math.sqrt(2.)/2.
+                   'expect_n2':math.sqrt(2.)/2.,
+                   'expect_ones':0.,
+                   'expect_zeros':0.
                  }
                 )
 
@@ -374,7 +431,9 @@ semTests=\
                    'expect_nan':1.1973155789768832,
                    'expect_inf':None,
                    'expect_n1':None,
-                   'expect_n2':0.5
+                   'expect_n2':0.5,
+                   'expect_ones':0.,
+                   'expect_zeros':0.
                  }
                 )
 
@@ -389,7 +448,9 @@ ciTests=\
                    'expect_nan':2.3467385347946914,
                    'expect_inf':None,
                    'expect_n1':None,
-                   'expect_n2':0.5*1.96
+                   'expect_n2':0.5*1.96,
+                   'expect_ones':0.,
+                   'expect_zeros':0.
                  }
                 )
 
@@ -402,7 +463,9 @@ rmsTests=\
                    'expect_text':8.821738571765286,
                    'expect_empty':None,
                    'expect_nan':8.902173459762077,
-                   'expect_inf':float('inf')
+                   'expect_inf':float('inf'),
+                   'expect_ones':1.,
+                   'expect_zeros':0.
                  }
                 )
 
@@ -417,7 +480,9 @@ prodTests=\
                    'expect_nan':28058126068.82824,
                    'expect_inf':float('inf'),
                    'expect_n1':4.,
-                   'expect_n2':20.
+                   'expect_n2':20.,
+                   'expect_ones':1.,
+                   'expect_zeros':0.
                  }
                 )
 
@@ -430,7 +495,9 @@ skewTests=\
                    'expect_text':-0.14872815083272467,
                    'expect_empty':None,
                    'expect_nan':-0.15515079014695105,
-                   'expect_inf':None
+                   'expect_inf':None,
+                   'expect_ones':None,
+                   'expect_zeros':None
                  }
                 )
 
@@ -443,7 +510,9 @@ skewpTests=\
                    'expect_text':-0.1322935682076316,
                    'expect_empty':None,
                    'expect_nan':-0.13664205273197477,
-                   'expect_inf':None
+                   'expect_inf':None,
+                   'expect_ones':None,
+                   'expect_zeros':None
                  }
                 )
 
@@ -456,7 +525,9 @@ kurtTests=\
                    'expect_text':-1.138508154575547,
                    'expect_empty':None,
                    'expect_nan':-1.329835362052564,
-                   'expect_inf':None
+                   'expect_inf':None,
+                   'expect_ones':None,
+                   'expect_zeros':None
                  }
                 )
 
@@ -469,7 +540,9 @@ kurtpTests=\
                    'expect_text':-1.1706824430972933,
                    'expect_empty':None,
                    'expect_nan':-1.2992969632487026,
-                   'expect_inf':None
+                   'expect_inf':None,
+                   'expect_ones':None,
+                   'expect_zeros':None
                  }
                 )
 

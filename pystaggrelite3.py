@@ -51,7 +51,7 @@ and mode are implemented with running tallies.
 
 import sys
 import inspect
-from math import sqrt,isnan,isinf,log10
+from math import sqrt,isnan,isinf,log10,log,exp
 from copy import copy
 
 maxfloat=    sys.float_info.max
@@ -190,33 +190,34 @@ class abs_mean:
 class geometric_mean:
     """
     Takes the absolute value of the elements and
-    computes the mean.
+    computes the mean. Modeled after scipy.stats.gmean.
+    If x contains any values < 0. return nan, if 
     """
     def __init__(self):
         self.s=0.
         self.N=0
-        self.ret_value=0.
+        self.ret_value = -1
 
     def step(self, value):
         if isfloat(value):
             v=float(value)
             if not isnan(v):
-                if v==0.:
-                    self.ret_value='Inf'
-                elif v<0:
+                if v<0:
                     self.ret_value=None
+                elif v==0 and self.ret_value!=None:
+                    self.ret_value=0.
                 else:
-                    self.s+=log10(v)
-                    self.N+=1
+                    self.s+=log(v)
+                self.N+=1
         
     def finalize(self):
         if self.N==0:
             return None
         
-        if self.ret_value!=0.:
+        if self.ret_value != -1:
             return self.ret_value
         
-        return 10.**(self.s/float(self.N))
+        return exp(self.s/float(self.N))
 
 class median:
     """
@@ -616,8 +617,12 @@ class skewp:
         k1 = m1
         k2 = m2 - m1**2
         k3 = 2.*m1**3. - 3.*m1*m2 + m3
-        
-        return k3/k2**1.5
+
+        num=k3
+        den=k2**1.5
+
+        if den==0: return None
+        else: return num/den
     
 class skew:
     """
@@ -668,7 +673,11 @@ class skew:
         k2 = m2 - m1**2
         k3 = 2.*m1**3. - 3.*m1*m2 + m3
         
-        return sqrt(self.N*(self.N-1.))/(self.N-2.)*k3/k2**1.5
+        num=sqrt(self.N*(self.N-1.))/(self.N-2.)*k3
+        den=k2**1.5
+
+        if den==0: return None
+        else: return num/den
     
 class kurtp:
     """
@@ -723,7 +732,11 @@ class kurtp:
 ##        k3 = 2.*m1**3. - 3.*m1*m2 + m3
         k4 = -6.*m1**4 + 12.*(m1**2)*m2 -3.*m2**2. - 4.*m1*m3 + m4
         
-        return k4/k2**2.
+        num=k4
+        den=k2**2.
+
+        if den==0: return None
+        else: return num/den
     
 class kurt:
     """
@@ -780,7 +793,13 @@ class kurt:
         k2 = m2 - m1**2
 ##        k3 = 2.*m1**3. - 3.*m1*m2 + m3
         k4 = -6.*m1**4 + 12.*(m1**2)*m2 -3.*m2**2. - 4.*m1*m3 + m4
+
+        num=k4
+        den=k2**2.
+
+        if den==0.: return None
         
-        g2=k4/k2**2.
+        g2=num/den
         return (self.N-1.)/((self.N-2.)*(self.N-3.))*((self.N+1.)*g2+6.)
+
  
