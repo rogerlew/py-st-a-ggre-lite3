@@ -50,12 +50,22 @@ and mode are implemented with running tallies.
 """
 
 import sys
-from collections import Counter
+import inspect
 from math import sqrt,isnan,isinf,log10
 from copy import copy
 
 maxfloat=    sys.float_info.max
 minfloat=-1.*sys.float_info.max
+
+def getaggregators():
+    """returns a generator of the (name,arity,function) of the
+    available aggregators"""
+    mod=sys.modules[__name__]
+    
+    for name,func in inspect.getmembers(mod,inspect.isclass):
+        if hasattr(func,'step') and hasattr(func,'finalize'):
+            arity=inspect.getargspec(func.step).args-1
+            yield (name,arity,func)
 
 def isfloat(x):
     """
@@ -73,6 +83,11 @@ def isfloat(x):
     try: float(x)
     except: return False
     return True
+
+class ignore:
+    """getaggregators shouldn't return this"""
+    def __init__(self):
+        pass
 
 class hasnan:
     """
@@ -231,6 +246,8 @@ class mode:
     Returns the mode of the elements.
     """
     def __init__(self):
+        # importing Counter here means it doesn't pollute the namespace.
+        from collections import Counter
         self.counter=Counter()
 
     def step(self, value):
@@ -766,25 +783,4 @@ class kurt:
         
         g2=k4/k2**2.
         return (self.N-1.)/((self.N-2.)*(self.N-3.))*((self.N+1.)*g2+6.)
-    
-if __name__ == "__main__":
-##    import doctest
-##    doctest.testmod()
-    import sqlite3 as sqlite
-   # create an sqlite table
-    con = sqlite.connect(":memory:")
-    cur = con.cursor()
-    cur.execute("""
-        create table test(
-            t text,
-            i integer,
-            f float,
-            neg float,
-            empty float,
-            hasnan float,
-            hasinf float,
-            modefive float,
-            n,
-            b blob
-            )
-        """)
+ 

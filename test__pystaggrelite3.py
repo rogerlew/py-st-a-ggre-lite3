@@ -13,7 +13,10 @@ import math
 import pystaggrelite3
 from pystaggrelite3 import isfloat
 
-
+class getaggTests(unittest.TestCase):
+    def test(self):
+        for n,f in pystaggrelite3.getaggregators():
+            self.assertFalse(n in['isfloat','ignore','Counter'])
 
 class aggTests(unittest.TestCase):
     """
@@ -491,7 +494,8 @@ def suite():
                unittest.makeSuite(abs_meanTests,       "Check"),
                unittest.makeSuite(geometric_meanTests, "Check"),
                unittest.makeSuite(modeTests,           "Check"),
-               unittest.makeSuite(medianTests,         "Check")
+               unittest.makeSuite(medianTests,         "Check"),
+               unittest.makeSuite(getaggTests)
                               ))
 
 if __name__ == "__main__":
