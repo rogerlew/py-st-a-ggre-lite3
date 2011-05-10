@@ -15,7 +15,7 @@ from pystaggrelite3 import isfloat
 
 class getaggTests(unittest.TestCase):
     def test(self):
-        for n,f in pystaggrelite3.getaggregators():
+        for n,a,f in pystaggrelite3.getaggregators():
             self.assertFalse(n in['isfloat','ignore','Counter'])
 
 class aggTests(unittest.TestCase):

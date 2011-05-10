@@ -5,7 +5,7 @@
 from setuptools import setup
 
 setup(name='pystaggrelite3',
-    version='0.1.1',
+    version='0.1.2',
     description='Pure Python sqlite3 statistics aggregate functions',
     author='Roger Lew',
     author_email='rogerlew@gmail.com',

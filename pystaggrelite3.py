@@ -64,7 +64,7 @@ def getaggregators():
     
     for name,func in inspect.getmembers(mod,inspect.isclass):
         if hasattr(func,'step') and hasattr(func,'finalize'):
-            arity=inspect.getargspec(func.step).args-1
+            arity=len(inspect.getargspec(func.step).args)-1
             yield (name,arity,func)
 
 def isfloat(x):
