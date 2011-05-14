@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 # Copyright (c) 2011, Roger Lew [see LICENSE.txt]
 # This software is funded in part by NIH Grant P20 RR016454.
 
@@ -9,7 +11,11 @@ defined in the stat_aggregate_funcs module.
 import unittest
 import sqlite3 as sqlite
 import math
+from random import normalvariate
+from pprint import pprint as pp
 
+import pylab
+from dictset import DictSet
 import pystaggrelite3
 from pystaggrelite3 import isfloat
 
@@ -18,6 +24,44 @@ class getaggTests(unittest.TestCase):
         for n,a,f in pystaggrelite3.getaggregators():
             self.assertFalse(n in['isfloat','ignore','Counter'])
 
+class histTests(unittest.TestCase):
+    def test(self):
+
+        # build the test data
+        V=[]
+        for i in range(300):
+            V.append(normalvariate(100.,10.))
+
+        # build some weight vectors to test
+        W1=[.001 for i in range(300)]
+        W2=[1. for i in range(300)]
+        W2[0]=10000.
+        W3=[-1. for i in range(300)]
+        W=[W1, W2, W3, None]
+
+        # factorially examine the conditions in this DictSet
+        # see: http://code.google.com/p/dictset/
+        ds = DictSet({'bins':[1,2,10,171,500],
+                     'range':[(0,100),None],
+                   'density':[True, False],
+                   'weights':[0, 1, 2, 3],
+                'cumulative':[True, False]})
+        
+        for b,r,d,w,c in ds.unique_combinations(
+            ['bins','range','density','weights','cumulative']):
+            
+            print(b,r,d,w,c)
+            DN, DB = pystaggrelite3.hist(V, b, r, d, W[w], c)
+            pylab.figure()
+            RN, RB, patches = pylab.hist(V, b, r, d, W[w], c)
+            pylab.close()
+
+            for d,r in zip(DN, RN):
+                self.assertAlmostEqual(d, r)
+
+            for d,r in zip(DB, RB):
+                self.assertAlmostEqual(d, r)
+                
 class aggTests(unittest.TestCase):
     """
     this is a generic class for testing the user defined aggregators
@@ -568,7 +612,8 @@ def suite():
                unittest.makeSuite(geometric_meanTests, "Check"),
                unittest.makeSuite(modeTests,           "Check"),
                unittest.makeSuite(medianTests,         "Check"),
-               unittest.makeSuite(getaggTests)
+               unittest.makeSuite(getaggTests),
+               unittest.makeSuite(histTests)
                               ))
 
 if __name__ == "__main__":

@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 # Copyright (c) 2011, Roger Lew [see LICENSE.txt]
 # This software is funded in part by NIH Grant P20 RR016454.
 
@@ -51,9 +53,19 @@ and mode are implemented with running tallies.
 
 import sys
 import inspect
-from math import sqrt,isnan,isinf,log10,log,exp
+from math import sqrt,isnan,isinf,log10,log,exp,floor
 from copy import copy
+from collections import Counter
 
+# Python 2 to 3 workarounds
+import sys
+if sys.version_info[0] == 2:
+    _strobj = basestring
+    _xrange = xrange
+elif sys.version_info[0] == 3:
+    _strobj = str
+    _xrange = range
+    
 maxfloat=    sys.float_info.max
 minfloat=-1.*sys.float_info.max
 
@@ -83,6 +95,145 @@ def isfloat(x):
     try: float(x)
     except: return False
     return True
+
+def _flatten(x):
+    """_flatten(sequence) -> list
+
+    Returns a single, flat list which contains all elements retrieved
+    from the sequence and all recursively contained sub-sequences
+    (iterables).
+
+    Examples:
+    >>> [1, 2, [3,4], (5,6)]
+    [1, 2, [3, 4], (5, 6)]
+    >>> _flatten([[[1,2,3], (42,None)], [4,5], [6], 7, MyVector(8,9,10)])
+    [1, 2, 3, 42, None, 4, 5, 6, 7, 8, 9, 10]"""
+
+    result = []
+    for el in x:
+        #if isinstance(el, (list, tuple)):
+        if hasattr(el, "__iter__") and not isinstance(el, basestring):
+            result.extend(_flatten(el))
+        else:
+            result.append(el)
+    return result
+
+def hist(V, bins=10, range=None, density=False, weights=None, cumulative=False):
+    # docstring mostly borrowed from numpy.histogram and pylab.hist
+    # numpy doesn't offer the cummulative. pylab.hist always makes a histogram
+    # plot. This function requires neither numpy or pylab and returns the
+    # same values. It has been tested
+    """
+    Compute the histogram of a set of data.
+
+    Parameters
+    ----------
+    V : list_like
+        Input data. The histogram is computed over the flattened array.
+    bins : int or sequence of scalars, optional
+        If `bins` is an int, it defines the number of equal-width
+        bins in the given range (10, by default). If `bins` is a sequence,
+        it defines the bin edges, including the rightmost edge, allowing
+        for non-uniform bin widths.
+    range : (float, float), optional
+        The lower and upper range of the bins.  If not provided, range
+        is simply ``(min(V), max(V))``.  Values outside the range are
+        ignored.
+    density : bool, optional
+        If False, the result will contain the number of samples
+        in each bin.  If True, the result is the value of the
+        probability *density* function at the bin, normalized such that
+        the *integral* over the range is 1. Note that the sum of the
+        histogram values will not be equal to 1 unless bins of unity
+        width are chosen; it is not a probability *mass* function.
+    weights : list_like, optional
+        An array of weights, of the same shape as `V`.  Each value in `V`
+        only contributes its associated weight towards the bin count
+        (instead of 1).  If `density` is True, the weights are normalized,
+        so that the integral of the density over the range remains 1
+    cumulative : bool, options
+        If True, then a histogram is computed where each bin gives the
+        counts in that bin plus all bins for smaller values. The last bin
+        gives the total number of datapoints. If normed is also True then
+        the histogram is normalized such that the last bin equals 1. If
+        cumulative evaluates to less than 0 (e.g. -1), the direction of
+        accumulation is reversed. In this case, if normed is also True,
+        then the histogram is normalized such that the first bin equals 1.
+
+    Returns
+    -------
+    hist : list
+        The values of the histogram. See `density` and `weights` for a
+        description of the possible semantics.
+    bin_edges : list
+        Return the bin edges ``(length(hist)+1)``.
+        
+   """
+    if bins < 1:
+        raise Exception('bins must be >= 1')
+
+    if not isinstance(cumulative, bool):
+        raise TypeError('cumulative must be a bool')
+    
+    if not isinstance(density, bool):
+        raise TypeError('cumulative must be a bool')
+
+    if range == None:
+        vmin, vmax = min(V), max(V)
+    else:
+        vmin, vmax = range
+        
+    rng  = vmax - vmin # the range of the histogram
+    dbin  = rng / float(bins) # the spacing between the bins
+
+    # build the weights if they aren't specified
+    if weights == None:
+        W = [1. for i in _xrange(len(V))]
+    else:
+        W = weights
+
+    if len(V) != len(W):
+        raise Exception('V and weights must be same length')
+    
+    histCounter = Counter() # a multi-set object from collections
+    for i, (v, w) in enumerate(zip(V, W)):
+        # the range defines a closed interval. The floor function
+        # treats it as open so if we find a value that is equal
+        # to max we move it to the appropriate bin.
+        
+        if v==vmax: v-=dbin/2.
+        # based on the min and the range rescale the data so it
+        # has a min of 0 and a max given by the number of bins
+        histCounter[floor(bins*(v-vmin)/rng)] += w
+
+    N = [histCounter[0]] # the counts
+    B = [vmin] # the bin edges to be returned
+    if cumulative:
+        for i in _xrange(1, bins):
+            B.append((i/float(bins))*rng+vmin)
+            N.append(N[-1]+histCounter[i])
+    else:
+        for i in _xrange(1, bins):
+            B.append((i/float(bins))*rng+vmin)
+            N.append(histCounter[i])
+
+    B.append(vmax) # append the last edge
+
+    if cumulative and density:
+        total = sum(v for k,v in histCounter.items() if k<bins)
+        for i in _xrange(bins):
+            N[i] /= total
+
+    if not cumulative and density:
+        total = sum(v for k,v in histCounter.items() if k<bins)
+        
+        for i in _xrange(bins):
+            N[i] /= (dbin*total)
+
+##    for n,b in zip(N, B):
+##        print(_str(b,'f',3),n)
+
+    return N,B
 
 class ignore:
     """getaggregators shouldn't return this"""
